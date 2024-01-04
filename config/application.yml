@@ -1,0 +1,32 @@
+application:
+  name: log-agent
+
+profiles:
+  active: dev
+
+date-format: "2006-01-02"
+date-time-format: "2006-01-02 15:04:05.000"
+time-zone: Asia/Shanghai
+
+server:
+  port: 8080
+
+logging:
+  level: debug
+  file: logs/log-agent.log
+
+datasources:
+  log-agent:
+    driver: sqlite3
+    url: "./data/log-agent.db"
+    maxIdleConns: 10
+    maxOpenConns: 10
+    showSQL: true
+
+projects:
+  log-agent:
+    path: ./
+    log:
+      watch: true
+      path: ./logs
+      file: log-agent.log
