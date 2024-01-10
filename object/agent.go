@@ -23,6 +23,7 @@ import (
 type LogFileWatchInfo struct {
 	Project string `json:"project"`
 	LogFile string `json:"logFile"`
+	Ip      string `json:"ip"`
 	Text    string `json:"text"`
 }
 
@@ -95,7 +96,7 @@ func tailFile(
 				if t.Error != nil {
 					log.Logger.Error("解析日志文件LogstashTimestamp发生异常", zap.String("logFile", logFile), zap.String("text", line.Text), zap.Error(err))
 				} else if startCarbon.IsInvalid() || (t.Gt(startCarbon) && startCarbon.IsValid()) {
-					if bytes, err := json.Marshal(&LogFileWatchInfo{Project: project, LogFile: logFile, Text: line.Text}); err != nil {
+					if bytes, err := json.Marshal(&LogFileWatchInfo{Project: project, LogFile: logFile, Ip: ip, Text: line.Text}); err != nil {
 						log.Logger.Error("序列化日志文件信息发生异常", zap.String("logFile", logFile), zap.Error(err))
 					} else {
 						if _, err := repository.LogFileInfoRepository.Update(db, &repository.LogFileInfo{Id: logFileInfoId, Ip: ip, Project: project, LogFile: logFile, LogstashTimestamp: mMap["@timestamp"].(string)}); err != nil {
@@ -107,7 +108,6 @@ func tailFile(
 							Send(producerName, topic, bytes)
 						}
 					}
-
 				}
 			}
 		}
