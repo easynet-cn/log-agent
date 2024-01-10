@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type seekInfoController struct{}
+type logFileInfoController struct{}
 
-var SeekInfoController = new(seekInfoController)
+var LogFileInfoController = new(logFileInfoController)
 
-func (c *seekInfoController) FindAll(ctx *gin.Context) {
-	if entities, err := repository.SeekInfoRepository.FindAll(object.GetDB()); err != nil {
+func (c *logFileInfoController) FindAll(ctx *gin.Context) {
+	if entities, err := repository.LogFileInfoRepository.FindAll(object.GetDB()); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": err.Error()})
 	} else {
 		ctx.JSON(http.StatusOK, entities)

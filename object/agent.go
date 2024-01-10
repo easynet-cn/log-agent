@@ -1,11 +1,13 @@
 package object
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"path"
 	"path/filepath"
 
+	"github.com/golang-module/carbon/v2"
 	"github.com/google/uuid"
 	"github.com/hpcloud/tail"
 	"github.com/spf13/viper"
@@ -26,40 +28,62 @@ func InitWatch(viper *viper.Viper) {
 			projectLogPath := viper.GetString(fmt.Sprintf("projects.%s.log.path", project))
 			projectLogFile := viper.GetString(fmt.Sprintf("projects.%s.log.file", project))
 
-			if logfile, err := filepath.Abs(path.Join(projectLogPath, projectLogFile)); err != nil {
-				log.Logger.Error("获取日志文件绝对路径发生异常", zap.String("logfile", logfile), zap.Error(err))
+			if logFile, err := filepath.Abs(path.Join(projectLogPath, projectLogFile)); err != nil {
+				log.Logger.Error("获取日志文件绝对路径发生异常", zap.String("logFile", logFile), zap.Error(err))
 			} else {
-				offset := int64(0)
+				var startCarbon carbon.Carbon
+				var logFileInfoEntity *repository.LogFileInfo
+
 				ip := util.LocalIp()
 
-				var seekInfoEntity *repository.SeekInfo
+				if entity, err := repository.LogFileInfoRepository.FindByIpAndLogFile(db, ip, logFile); err != nil {
+					log.Logger.Error("查询日志文件记录信息异常", zap.String("logFile", logFile), zap.Error(err))
 
-				if entity, err := repository.SeekInfoRepository.FindByIpAndLogFile(db, ip, logfile); err != nil {
-					log.Logger.Error("查询日志文件偏移量发生异常", zap.String("logfile", logfile), zap.Error(err))
+					return
 				} else if entity.Id == "" {
-					seekInfoEntity = &repository.SeekInfo{Id: uuid.NewString(), Ip: ip, Project: project, LogFile: logfile, Offset: 0}
+					if entity, err := repository.LogFileInfoRepository.Create(db, &repository.LogFileInfo{Id: uuid.NewString(), Ip: ip, Project: project, LogFile: logFile}); err != nil {
+						log.Logger.Error("创建日志文件记录信息异常", zap.String("logFile", logFile), zap.Error(err))
 
-					if _, err := repository.SeekInfoRepository.Create(db, seekInfoEntity); err != nil {
-						log.Logger.Error("创建日志文件偏移量发生异常", zap.String("logfile", logfile), zap.Error(err))
+						return
+					} else {
+						logFileInfoEntity = entity
 					}
 				} else {
-					seekInfoEntity = entity
+					if entity.LogstashTimestamp != "" {
+						startCarbon = carbon.Parse(entity.LogstashTimestamp)
 
-					offset = entity.Offset
+						if startCarbon.Error != nil {
+							return
+						}
+					}
+
+					logFileInfoEntity = entity
 				}
 
-				if t, err := tail.TailFile(logfile, tail.Config{Follow: true, Location: &tail.SeekInfo{Offset: offset, Whence: 0}}); err != nil {
-					log.Logger.Error("读取日志文件发生异常", zap.String("logfile", logfile), zap.Error(err))
+				if t, err := tail.TailFile(logFile, tail.Config{Follow: true}); err != nil {
+					log.Logger.Error("读取日志文件发生异常", zap.String("logFile", logFile), zap.Error(err))
 				} else {
 					for line := range t.Lines {
+						mMap := make(map[string]any)
 
-						fmt.Println(line.Text)
-
-						if _, err := repository.SeekInfoRepository.Update(db, &repository.SeekInfo{Id: seekInfoEntity.Id, Ip: ip, Project: project, LogFile: logfile, Offset: offset}); err != nil {
-							log.Logger.Error("更新日志文件偏移量发生异常", zap.String("logfile", logfile), zap.Error(err))
+						if err := json.Unmarshal([]byte(line.Text), &mMap); err != nil {
+							log.Logger.Error("解析日志文件发生异常", zap.String("logFile", logFile), zap.String("text", line.Text), zap.Error(err))
 						} else {
-							seekInfoEntity.Offset = offset
-							offset = offset + int64(len([]byte(line.Text)))
+							t := carbon.Parse(mMap["@timestamp"].(string))
+
+							startCarbonIsInvalid := startCarbon.IsInvalid()
+
+							fmt.Println(startCarbonIsInvalid)
+
+							if t.Error != nil {
+								log.Logger.Error("解析日志文件LogstashTimestamp发生异常", zap.String("logFile", logFile), zap.String("text", line.Text), zap.Error(err))
+							} else if startCarbon.IsInvalid() || (t.Gt(startCarbon) && startCarbon.IsValid()) {
+								if _, err := repository.LogFileInfoRepository.Update(db, &repository.LogFileInfo{Id: logFileInfoEntity.Id, Ip: ip, Project: project, LogFile: logFile, LogstashTimestamp: mMap["@timestamp"].(string)}); err != nil {
+									log.Logger.Error("更新日志文件信息发生异常", zap.String("logFile", logFile), zap.Error(err))
+								} else {
+									fmt.Println(line.Text)
+								}
+							}
 						}
 					}
 				}
