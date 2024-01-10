@@ -23,6 +23,10 @@ datasources:
     maxOpenConns: 10
     showSQL: true
 
+kafka:
+  log-agent:
+    brokers: ["localhost:9092"]
+
 projects:
   log-agent:
     path: ./

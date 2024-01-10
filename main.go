@@ -20,6 +20,7 @@ func main() {
 	log.InitLogger(configuration.Config)
 	object.InitDb(configuration.Config)
 	repository.InitRepository(object.GetDB())
+	object.InitProducer(configuration.Config)
 
 	go object.InitWatch(configuration.Config)
 

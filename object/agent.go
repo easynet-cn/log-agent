@@ -71,10 +71,6 @@ func InitWatch(viper *viper.Viper) {
 						} else {
 							t := carbon.Parse(mMap["@timestamp"].(string))
 
-							startCarbonIsInvalid := startCarbon.IsInvalid()
-
-							fmt.Println(startCarbonIsInvalid)
-
 							if t.Error != nil {
 								log.Logger.Error("解析日志文件LogstashTimestamp发生异常", zap.String("logFile", logFile), zap.String("text", line.Text), zap.Error(err))
 							} else if startCarbon.IsInvalid() || (t.Gt(startCarbon) && startCarbon.IsValid()) {
