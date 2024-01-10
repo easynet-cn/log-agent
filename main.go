@@ -35,6 +35,5 @@ func main() {
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Logger.Error("服务启动异常", zap.Error(err))
-
 	}
 }

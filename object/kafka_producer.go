@@ -12,7 +12,7 @@ import (
 var producers map[string]sarama.AsyncProducer
 
 func InitProducer(viper *viper.Viper) {
-	producers := make(map[string]sarama.AsyncProducer)
+	producers = make(map[string]sarama.AsyncProducer)
 
 	for k := range viper.GetStringMap("kafka") {
 		config := sarama.NewConfig()

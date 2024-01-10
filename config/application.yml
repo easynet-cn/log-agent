@@ -34,3 +34,9 @@ projects:
       watch: true
       path: ./logs
       file: log-agent.log
+    output:
+      kafka:
+        name: log-agent
+        topic: log-agent-log-topic
+        
+    
