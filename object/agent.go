@@ -81,7 +81,7 @@ func tailFile(
 	logFile string,
 	ip string,
 	logFileInfoId string) {
-	if t, err := tail.TailFile(logFile, tail.Config{Follow: true, MustExist: true}); err != nil {
+	if t, err := tail.TailFile(logFile, tail.Config{ReOpen: true, Follow: true, MustExist: true}); err != nil {
 		log.Logger.Error("读取日志文件发生异常", zap.String("logFile", logFile), zap.Error(err))
 	} else {
 		for line := range t.Lines {
