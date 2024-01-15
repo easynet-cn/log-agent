@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-module/carbon/v2"
 	_ "github.com/mattn/go-sqlite3"
 

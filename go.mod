@@ -7,6 +7,7 @@ require (
 	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-contrib/zap v0.2.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-module/carbon/v2 v2.3.5
 	github.com/google/uuid v1.5.0
 	github.com/hpcloud/tail v1.0.0
