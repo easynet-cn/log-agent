@@ -29,6 +29,9 @@ kafka:
 
 projects:
   log-agent:
+    parameters:
+      profile: dev
+      version: 1.0.0
     path: ./
     log:
       watch: true

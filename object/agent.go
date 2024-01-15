@@ -21,10 +21,11 @@ import (
 )
 
 type LogFileWatchInfo struct {
-	Project string `json:"project"`
-	LogFile string `json:"logFile"`
-	Ip      string `json:"ip"`
-	Text    string `json:"text"`
+	Project    string         `json:"project"`
+	LogFile    string         `json:"logFile"`
+	Ip         string         `json:"ip"`
+	Text       string         `json:"text"`
+	Parameters map[string]any `json:"parameters"`
 }
 
 func InitWatch(viper *viper.Viper) {
@@ -95,7 +96,14 @@ func tailFile(
 				if t.Error != nil {
 					log.Logger.Error("解析日志文件LogstashTimestamp发生异常", zap.String("logFile", logFile), zap.String("text", line.Text), zap.Error(err))
 				} else if startCarbon.IsInvalid() || (t.Gt(startCarbon) && startCarbon.IsValid()) {
-					if bytes, err := json.Marshal(&LogFileWatchInfo{Project: project, LogFile: logFile, Ip: ip, Text: line.Text}); err != nil {
+					logFileWatchInfo := &LogFileWatchInfo{
+						Project:    project,
+						LogFile:    logFile,
+						Ip:         ip,
+						Text:       line.Text,
+						Parameters: configuration.Config.GetStringMap(fmt.Sprintf("projects.%s.parameters", project)),
+					}
+					if bytes, err := json.Marshal(logFileWatchInfo); err != nil {
 						log.Logger.Error("序列化日志文件信息发生异常", zap.String("logFile", logFile), zap.Error(err))
 					} else {
 						if _, err := repository.LogFileInfoRepository.Update(db, &repository.LogFileInfo{Id: logFileInfoId, Ip: ip, Project: project, LogFile: logFile, LogstashTimestamp: mMap["@timestamp"].(string)}); err != nil {
