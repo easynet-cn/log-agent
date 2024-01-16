@@ -26,6 +26,7 @@ func NewRouter() *gin.Engine {
 	server.Use(Recovery)
 
 	server.GET("/system/stats", Stats)
+	server.GET("/files", controller.FileController.Files)
 	server.GET("/files/download", controller.FileController.Download)
 	server.GET("/log-file-infos", controller.LogFileInfoController.FindAll)
 
